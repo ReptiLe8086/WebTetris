@@ -1,7 +1,7 @@
 import logo from './logo.svg';
 import React from 'react';
 import './App.css';
-import MainField from './MainField/MainField';
+import MainField from './components/MainField/MainField.jsx';
 
 function App() {
 
