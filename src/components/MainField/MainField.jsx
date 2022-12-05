@@ -16,10 +16,11 @@ export default class MainField extends React.Component {
         this.state = { color: 'blue',
                        isFieldVisible: false,
                        dropSpeed: 0,
-                       isFilled: false,
+                       isDropped: false,
                        rowsPassed: 0,
                        horizontalPos: 4,
-                       playField: [] };
+                       droppedFigures: []
+                       };
     }
     
     playFieldParameters = {
@@ -27,6 +28,9 @@ export default class MainField extends React.Component {
         height: 800,
     };
     
+
+    dropped = [];
+
     verticalStepsCount = 10;
     horizontalStepsCount = 20;
     verticalStepSize = this.playFieldParameters.width / this.verticalStepsCount;
@@ -34,7 +38,8 @@ export default class MainField extends React.Component {
     xStart = window.innerWidth/2 - this.playFieldParameters.width/2;
     yStart = window.innerHeight/2 - this.playFieldParameters.height/2;
 
-
+    test = [];
+    testCount = 0;
 
     buttonStyle = {
         backgroundColor: 'red',
@@ -65,8 +70,7 @@ export default class MainField extends React.Component {
 
     startClick = () => {
         this.setState({color: 'lightgray',
-                       isFieldVisible: true,
-                       isFilled: true});
+                       isFieldVisible: true});
     }
 
 
@@ -94,7 +98,7 @@ export default class MainField extends React.Component {
     addEmptyGrid() {
 
         
-        let gridRects = [];
+        const gridRects = [];
         //const isFilledArray = [];
 
         for(let idx = 0; idx < this.verticalStepsCount; idx ++)
@@ -108,7 +112,7 @@ export default class MainField extends React.Component {
                     y={this.yStart}
                     width={this.verticalStepSize}
                     height={this.horizontalStepSize}
-                    key={String(this.xStart)+String(this.yStart)}
+                    key={String(this.xStart*100)+String(this.yStart*100)}
                     />);
                 
     
@@ -123,73 +127,91 @@ export default class MainField extends React.Component {
         this.xStart = window.innerWidth/2 - this.playFieldParameters.width/2;
         //this.setState({playField: gridRects, isFilled: true});
         //this.setState({playField: gridRects})
+    
+
+
         return gridRects;
     }
        
 
+    //TODO: add shape type
+    createFigure(leftBorder, bottomBorder) {
+        
+        const figure = <Block 
+                                x={this.xStart + this.verticalStepSize * (leftBorder)}
+                                y={this.yStart + this.horizontalStepSize * (bottomBorder)}
+                                color='red'
+                                width={this.verticalStepSize}
+                                height={this.horizontalStepSize}
+                               
+                        />;
+        
+        //this.droppedFigures.push(figure);               
+        if(bottomBorder==19) {
+            this.dropped.push(figure);
+        }
+        
+        console.log("здесь");
 
-    dropFigure() {
-
-
+        return figure;
     }
 
-    //bottomBorder is a left bottom block of figure - object
-    createFigure(bottomBorder, leftBorder) {
-        let playField = this.addEmptyGrid();
-        // let column = playField[bottomLeftBorder.column];
-        // let isColumnFilled = this.state.isFilledArray[bottomLeftBorder.column];
-        // let count = 0;
-        const columnArray = playField[bottomBorder];
-
-
-        const editColumn = columnArray.splice(leftBorder, 1, 
-            <Block 
-                x={this.xStart + this.verticalStepSize * (bottomBorder)}
-                y={this.yStart + this.horizontalStepSize * (leftBorder)}
-                color='red'
-                width={this.verticalStepSize}
-                height={this.horizontalStepSize}
-                key={String(this.xStart)+String(this.yStart)}
-                />);
-
-                
-        //this.state.isFilledArray[bottomLeftBorder.column].splice(bottomLeftBorder.row, 1, true);
-        const editField = playField.splice(bottomBorder, 1, editColumn);
+    // dropFigure(bottomBorder, leftBorder) {
+    //     let playField = this.addEmptyGrid();
+    //     const columnArray = playField[bottomBorder];   
+    //     const editColumn = columnArray.splice(leftBorder, 1, 
+    //         <Block 
+    //             x={this.xStart + this.verticalStepSize * (bottomBorder)}
+    //             y={this.yStart + this.horizontalStepSize * (leftBorder)}
+    //             color='red'
+    //             width={this.verticalStepSize}
+    //             height={this.horizontalStepSize}
+    //             key={String(this.xStart)+String(this.yStart)}
+    //             />);
+    //     const editField = playField.splice(bottomBorder, 1, editColumn);
         
 
-        return editField;
+    //     return editField;
 
-        
+    // }
 
-
-    }
-
-
-
+ 
 
     tick(placedFigureCount) {        
-        
-        let rows = this.state.rowsPassed;
-        if(rows >= 19) {
-            this.setState({rowsPassed: 0});
+        if(this.state.isFieldVisible) {
+            
+
+
+
+
+            let rows = this.state.rowsPassed;
+            if(this.dropped.length==0)
+                {
+                    console.log("Не добавлено");
+                }
+            else { 
+                console.log("Добавлено", this.dropped.length);
+                // console.log(this.droppedFigures[this.testCount]);
+                // console.log(this.droppedFigures[this.testCount+1]);
+                // this.testCount += 2;
+             }
+            if(rows == 19) {
+                
+                this.setState({rowsPassed: 0, horizontalPos: 4, droppedFigures: this.dropped});
+                
+                
+            }
+            else {
+                this.setState({rowsPassed: ++rows, speed: placedFigureCount});
+            }
+            
+    
+    
+            // this.setState({playField: grid, speed: placedFigureCount});
         }
-        //this.setState({playField: grid});
-        //let border = {column: 2, row: 2};
-        else {
-            this.setState({rowsPassed: ++rows, speed: placedFigureCount});
-        }
         
-
-
-        // this.setState({playField: grid, speed: placedFigureCount});
-
-       
         
     }
-
-
-
-
 
 
 
@@ -201,7 +223,9 @@ export default class MainField extends React.Component {
                 (<Stage id="mainStage" width={window.innerWidth} height={window.innerHeight} style={{backgroundColor: this.state.color, justifyContent: 'center'}}>
                         <Layer id="fieldLayer" style={{backgroundColor: 'blue'}}>
                             {this.addEmptyGrid()}
-                            {this.createFigure(this.state.horizontalPos, this.state.rowsPassed)}						
+                            
+                            {this.createFigure(this.state.horizontalPos, this.state.rowsPassed)}
+                            {this.state.droppedFigures}						
                             
                         </Layer>
                 </Stage>) 
