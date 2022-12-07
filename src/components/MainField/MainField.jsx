@@ -19,17 +19,28 @@ export default class MainField extends React.Component {
                        isDropped: false,
                        rowsPassed: 0,
                        horizontalPos: 4,
-                       droppedFigures: []
+                       droppedFigures: [],
+                       currentFigure: undefined,
+                       
                        };
     }
     
     playFieldParameters = {
         width: 400,
         height: 800,
+        xStart: 175.5,
+        yStart: 59,
+        xFinish: 535.5,
+        yFinish: 819
     };
     
 
-    dropped = [];
+    droppedFiguresWithParameters = [];
+    currentFigureWithParameters = undefined;
+
+    filledLines = [];
+
+
 
     verticalStepsCount = 10;
     horizontalStepsCount = 20;
@@ -39,7 +50,7 @@ export default class MainField extends React.Component {
     yStart = window.innerHeight/2 - this.playFieldParameters.height/2;
 
     test = [];
-    testCount = 0;
+    tickCount = 0;
 
     buttonStyle = {
         backgroundColor: 'red',
@@ -57,7 +68,7 @@ export default class MainField extends React.Component {
         window.addEventListener('keydown', this.handleKeyDown);
         this.gridID = setInterval(
             () => this.tick(1),
-            1000
+            100
         );
 
     }
@@ -76,21 +87,25 @@ export default class MainField extends React.Component {
 
 
     handleKeyDown = (event) => {
-        if(event.keyCode == 37) {
-            if(this.state.horizontalPos > 0){
-
-                this.setState({horizontalPos: --this.state.horizontalPos});
-            }
-        }
-        else if(event.keyCode == 39) {
-            if(this.state.horizontalPos < 9){
-                this.setState({horizontalPos: ++this.state.horizontalPos});
-            }
-        }
-        else if(event.keyCode == 40) {
-            if(true) //TODO
+        if(event.keyCode === 37) {
+            if(!this.isOccupiedLeft(this.currentFigureWithParameters.x,
+                this.currentFigureWithParameters.y))
             {
-                this.setState({rowsPassed: ++this.state.rowsPassed});
+            const figure = this.createFigure(--this.state.horizontalPos, this.state.rowsPassed);
+            }
+        }
+        else if(event.keyCode === 39) {
+            if(!this.isOccupiedRight(this.currentFigureWithParameters.x,
+                                      this.currentFigureWithParameters.y))
+            {
+            const figure = this.createFigure(++this.state.horizontalPos, this.state.rowsPassed);
+            }
+        }
+        else if(event.keyCode === 40) {
+            if(!this.isOccupiedBottom(this.currentFigureWithParameters.x,
+                                      this.currentFigureWithParameters.y)) 
+            {
+                const figure = this.createFigure(this.state.horizontalPos, ++this.state.rowsPassed);
             }
         }
     }
@@ -125,92 +140,178 @@ export default class MainField extends React.Component {
     
         }
         this.xStart = window.innerWidth/2 - this.playFieldParameters.width/2;
-        //this.setState({playField: gridRects, isFilled: true});
-        //this.setState({playField: gridRects})
-    
-
-
         return gridRects;
     }
        
+    isOccupiedBottom(x, y) {
+       let isOccupied = false;
+       if(y >= this.playFieldParameters.height) {
+            isOccupied = true;
+        }
+       for(let figure of this.droppedFiguresWithParameters) {
+            if(x === figure.x) {
+                if(y + this.verticalStepSize === figure.y) {
+                    isOccupied = true;
+                }
+            }
+       }
+       return isOccupied;
+    }
+
+    isOccupiedLeft(x, y) {
+        let isOccupied = false;
+        if(x <= this.xStart) {
+            isOccupied = true;
+        }
+        for(let figure of this.droppedFiguresWithParameters) {
+            if(y === figure.y) {
+                if(x - this.horizontalStepSize === figure.x) {
+                    isOccupied = true;
+                }
+            }
+        }
+        return isOccupied;
+    }
+
+
+    isOccupiedRight(x, y) {
+        let isOccupied = false;
+        if(x >= this.xStart + this.verticalStepSize * 9) {
+            isOccupied = true;
+        }
+        for(let figure of this.droppedFiguresWithParameters) {
+            if(y === figure.y) {
+                if(x + this.horizontalStepSize === figure.x) {
+                    isOccupied = true;
+                }
+            }
+        }
+        return isOccupied;
+    }
+
+    isLineFilled() {
+        let blockInARowCount = 0;
+        let isFilled = false;
+
+        
+
+        for(let i = 0; i < this.horizontalStepsCount; i++) {
+            for (let figure of this.droppedFiguresWithParameters) {
+
+                   
+                    if(figure.y === this.yStart + this.horizontalStepSize * i) {
+                        blockInARowCount++;
+                        //console.log("ТУТ", i);
+                    }
+                    
+            }
+            
+            if(blockInARowCount === 10) {
+                this.filledLines.push(i);
+                isFilled = true;
+                console.log("Линия собралась");
+            }
+            blockInARowCount=0;
+        }
+            
+
+            
+    
+
+       // console("Блоков в одной линии", blockInARowCount);
+        return isFilled;
+    }
+
+
+    //TODO
+    deleteLines() {
+        for(let row of this.filledLines) {
+            for(let figure of this.droppedFiguresWithParameters) {
+                if(figure.y === this.yStart + this.verticalStepSize * row) {
+                    this.droppedFiguresWithParameters.splice(this.droppedFiguresWithParameters.indexOf(figure), 1);
+                    for(let leftFigure of this.droppedFiguresWithParameters) {
+                        if(leftFigure.y < figure.y) {
+                            leftFigure.y += this.verticalStepSize;
+                        }
+                    }
+                }
+            }
+        }
+
+        this.refreshBlocks();
+    }
+
+    //TODO
+    refreshBlocks() {
+        let newBlocks = [];
+        for(let figure of this.droppedFiguresWithParameters) {
+            newBlocks.push(this.createFigure((figure.y - this.yStart) / this.verticalStepSize),
+                                            ((figure.x - this.xStart) / this.horizontalStepSize));
+        }
+        this.setState({droppedFigures: newBlocks});
+    }
+
 
     //TODO: add shape type
     createFigure(leftBorder, bottomBorder) {
         
+        if(bottomBorder > 19){
+            bottomBorder = 19;
+        }
+
+        let xFigure = this.xStart + this.verticalStepSize * (leftBorder);
+        let yFigure = this.yStart + this.horizontalStepSize * (bottomBorder);
+
         const figure = <Block 
-                                x={this.xStart + this.verticalStepSize * (leftBorder)}
-                                y={this.yStart + this.horizontalStepSize * (bottomBorder)}
+                                x={xFigure}
+                                y={yFigure}
                                 color='red'
                                 width={this.verticalStepSize}
-                                height={this.horizontalStepSize}
-                               
+                                height={this.horizontalStepSize}                       
                         />;
-        
-        //this.droppedFigures.push(figure);               
-        if(bottomBorder==19) {
-            this.dropped.push(figure);
+              
+        this.setState({currentFigure: figure});
+        this.currentFigureWithParameters = {
+            x: xFigure,
+            y: yFigure
         }
-        
-        console.log("здесь");
-
+        //console.log(this.currentFigureWithParameters.y);
         return figure;
     }
 
-    // dropFigure(bottomBorder, leftBorder) {
-    //     let playField = this.addEmptyGrid();
-    //     const columnArray = playField[bottomBorder];   
-    //     const editColumn = columnArray.splice(leftBorder, 1, 
-    //         <Block 
-    //             x={this.xStart + this.verticalStepSize * (bottomBorder)}
-    //             y={this.yStart + this.horizontalStepSize * (leftBorder)}
-    //             color='red'
-    //             width={this.verticalStepSize}
-    //             height={this.horizontalStepSize}
-    //             key={String(this.xStart)+String(this.yStart)}
-    //             />);
-    //     const editField = playField.splice(bottomBorder, 1, editColumn);
+
+    tick(placedFigureCount) {   
+       // console.log("tick count", this.tickCount); 
         
+            if(this.state.isFieldVisible) {
+                //console.log(this.isLineFilled());
+                    this.isLineFilled();
+                    let figure = this.createFigure(this.state.horizontalPos, this.state.rowsPassed);
+                    //console.log("tick", this.currentFigureWithParameters.y);
+                    let rows = this.state.rowsPassed;
 
-    //     return editField;
 
-    // }
-
- 
-
-    tick(placedFigureCount) {        
-        if(this.state.isFieldVisible) {
+                    // console.log(this.isOccupiedBottom(this.currentFigureWithParameters.x,
+                    //                                   this.currentFigureWithParameters.y));
+                    if(this.isOccupiedBottom(this.currentFigureWithParameters.x,
+                                             this.currentFigureWithParameters.y)) {
+                        
+                        this.setState({rowsPassed: 0, horizontalPos: 4, droppedFigures: [...this.state.droppedFigures, figure]});
+                        this.droppedFiguresWithParameters.push(this.currentFigureWithParameters);
+                        
+                    }
+                    else {
+                        this.setState({rowsPassed: ++rows, speed: placedFigureCount});
+                    }
+                
+                    
+                // if(this.isLineFilled()) {
+                //     this.deleteLines();
+                // }
             
-
-
-
-
-            let rows = this.state.rowsPassed;
-            if(this.dropped.length==0)
-                {
-                    console.log("Не добавлено");
+                    //console.log(this.droppedFiguresWithParameters);
                 }
-            else { 
-                console.log("Добавлено", this.dropped.length);
-                // console.log(this.droppedFigures[this.testCount]);
-                // console.log(this.droppedFigures[this.testCount+1]);
-                // this.testCount += 2;
-             }
-            if(rows == 19) {
-                
-                this.setState({rowsPassed: 0, horizontalPos: 4, droppedFigures: this.dropped});
-                
-                
-            }
-            else {
-                this.setState({rowsPassed: ++rows, speed: placedFigureCount});
-            }
-            
-    
-    
-            // this.setState({playField: grid, speed: placedFigureCount});
-        }
-        
-        
+  
     }
 
 
@@ -223,8 +324,7 @@ export default class MainField extends React.Component {
                 (<Stage id="mainStage" width={window.innerWidth} height={window.innerHeight} style={{backgroundColor: this.state.color, justifyContent: 'center'}}>
                         <Layer id="fieldLayer" style={{backgroundColor: 'blue'}}>
                             {this.addEmptyGrid()}
-                            
-                            {this.createFigure(this.state.horizontalPos, this.state.rowsPassed)}
+                            {this.state.currentFigure}
                             {this.state.droppedFigures}						
                             
                         </Layer>
