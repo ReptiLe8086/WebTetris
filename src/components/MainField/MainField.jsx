@@ -21,26 +21,24 @@ export default class MainField extends React.Component {
                        horizontalPos: 4,
                        droppedFigures: [],
                        currentFigure: undefined,
-                       
+                       score: 0
                        };
     }
     
     playFieldParameters = {
         width: 400,
         height: 800,
-        xStart: 175.5,
-        yStart: 59,
-        xFinish: 535.5,
-        yFinish: 819
     };
     
+
+
 
     droppedFiguresWithParameters = [];
     currentFigureWithParameters = undefined;
 
     filledLines = [];
 
-
+    scoreAddition = 100;
 
     verticalStepsCount = 10;
     horizontalStepsCount = 20;
@@ -51,6 +49,8 @@ export default class MainField extends React.Component {
 
     test = [];
     tickCount = 0;
+    keyCount = 0;
+
 
     buttonStyle = {
         backgroundColor: 'red',
@@ -91,30 +91,47 @@ export default class MainField extends React.Component {
             if(!this.isOccupiedLeft(this.currentFigureWithParameters.x,
                 this.currentFigureWithParameters.y))
             {
-            const figure = this.createFigure(--this.state.horizontalPos, this.state.rowsPassed);
+            this.setState({horizontalPos: (this.state.horizontalPos - 1)})    
+            const figure = this.createFigure(this.state.horizontalPos, this.state.rowsPassed);
+            this.setState({currentFigure: figure});
             }
         }
         else if(event.keyCode === 39) {
             if(!this.isOccupiedRight(this.currentFigureWithParameters.x,
                                       this.currentFigureWithParameters.y))
             {
-            const figure = this.createFigure(++this.state.horizontalPos, this.state.rowsPassed);
+            this.setState({horizontalPos: (this.state.horizontalPos + 1)})    
+            const figure = this.createFigure(this.state.horizontalPos, this.state.rowsPassed);
+            this.setState({currentFigure: figure});
             }
         }
         else if(event.keyCode === 40) {
             if(!this.isOccupiedBottom(this.currentFigureWithParameters.x,
                                       this.currentFigureWithParameters.y)) 
             {
-                const figure = this.createFigure(this.state.horizontalPos, ++this.state.rowsPassed);
+                this.setState({rowsPassed: (this.state.rowsPassed + 1)})
+                const figure = this.createFigure(this.state.horizontalPos, this.state.rowsPassed);
+                this.setState({currentFigure: figure});
             }
         }
+    }
+
+    addScoreBoard() {
+        return <Text 
+                x={this.xStart - 150}
+                y={this.yStart}
+                text={`СЧЁТ\n\n ${this.state.score}`}
+                fontSize={30}
+                fontFamily="Arial, Helvetica, sans-serif"
+                fill="black"
+                align="center"
+                />;
     }
 
     addEmptyGrid() {
 
         
         const gridRects = [];
-        //const isFilledArray = [];
 
         for(let idx = 0; idx < this.verticalStepsCount; idx ++)
         {
@@ -127,10 +144,10 @@ export default class MainField extends React.Component {
                     y={this.yStart}
                     width={this.verticalStepSize}
                     height={this.horizontalStepSize}
-                    key={String(this.xStart*100)+String(this.yStart*100)}
+                    key={String(this.keyCount)}
                     />);
                 
-    
+                this.keyCount++;    
                 this.yStart += this.verticalStepSize;
             }
             gridRects.push(rowArray);
@@ -145,16 +162,18 @@ export default class MainField extends React.Component {
        
     isOccupiedBottom(x, y) {
        let isOccupied = false;
-       if(y >= this.playFieldParameters.height) {
+       if(y ===  this.verticalStepSize * 19 + this.yStart) {
             isOccupied = true;
         }
-       for(let figure of this.droppedFiguresWithParameters) {
-            if(x === figure.x) {
-                if(y + this.verticalStepSize === figure.y) {
-                    isOccupied = true;
-                }
-            }
-       }
+       this.droppedFiguresWithParameters.forEach((item) => {
+            if(x === item.x) {
+                    if(y + this.verticalStepSize === item.y) {
+                        isOccupied = true;
+                    }
+                }});
+       
+            
+       
        return isOccupied;
     }
 
@@ -163,29 +182,33 @@ export default class MainField extends React.Component {
         if(x <= this.xStart) {
             isOccupied = true;
         }
-        for(let figure of this.droppedFiguresWithParameters) {
-            if(y === figure.y) {
-                if(x - this.horizontalStepSize === figure.x) {
+        this.droppedFiguresWithParameters.forEach((item) => {
+            if(y === item.y) {
+                if(x - this.horizontalStepSize === item.x) {
                     isOccupied = true;
                 }
             }
-        }
+        });
+            
+        
         return isOccupied;
     }
 
 
     isOccupiedRight(x, y) {
         let isOccupied = false;
-        if(x >= this.xStart + this.verticalStepSize * 9) {
+        if(x >=  this.verticalStepSize * 9 + this.xStart) {
             isOccupied = true;
         }
-        for(let figure of this.droppedFiguresWithParameters) {
-            if(y === figure.y) {
-                if(x + this.horizontalStepSize === figure.x) {
+        this.droppedFiguresWithParameters.forEach((item) => {
+            if(y === item.y) {
+                if(x + this.horizontalStepSize === item.x) {
                     isOccupied = true;
                 }
             }
-        }
+        }); 
+            
+        
         return isOccupied;
     }
 
@@ -199,9 +222,8 @@ export default class MainField extends React.Component {
             for (let figure of this.droppedFiguresWithParameters) {
 
                    
-                    if(figure.y === this.yStart + this.horizontalStepSize * i) {
+                    if(figure.y === this.horizontalStepSize * i + this.yStart) {
                         blockInARowCount++;
-                        //console.log("ТУТ", i);
                     }
                     
             }
@@ -209,72 +231,84 @@ export default class MainField extends React.Component {
             if(blockInARowCount === 10) {
                 this.filledLines.push(i);
                 isFilled = true;
-                console.log("Линия собралась");
             }
-            blockInARowCount=0;
+            blockInARowCount = 0;
         }
-            
 
-            
-    
-
-       // console("Блоков в одной линии", blockInARowCount);
+        
         return isFilled;
     }
 
 
-    //TODO
+    
     deleteLines() {
-        for(let row of this.filledLines) {
-            for(let figure of this.droppedFiguresWithParameters) {
-                if(figure.y === this.yStart + this.verticalStepSize * row) {
-                    this.droppedFiguresWithParameters.splice(this.droppedFiguresWithParameters.indexOf(figure), 1);
-                    for(let leftFigure of this.droppedFiguresWithParameters) {
-                        if(leftFigure.y < figure.y) {
-                            leftFigure.y += this.verticalStepSize;
-                        }
+        const leftFigures = [];
+        this.filledLines.forEach((lineIndex) => {
+            this.droppedFiguresWithParameters.forEach((figure) => {
+                if(figure.y !== this.verticalStepSize * lineIndex + this.yStart) {
+                    if(figure.y < this.verticalStepSize * lineIndex + this.yStart) {
+                        figure.y += this.verticalStepSize;
+                    
                     }
+                    leftFigures.push(figure);
                 }
-            }
-        }
-
+            });
+        });
+        this.droppedFiguresWithParameters = leftFigures;
+        console.log(this.droppedFiguresWithParameters);
         this.refreshBlocks();
     }
 
-    //TODO
+    
     refreshBlocks() {
-        let newBlocks = [];
-        for(let figure of this.droppedFiguresWithParameters) {
-            newBlocks.push(this.createFigure((figure.y - this.yStart) / this.verticalStepSize),
-                                            ((figure.x - this.xStart) / this.horizontalStepSize));
-        }
+
+        const newBlocks = [];
+        this.setState({droppedFigures: [], score: this.state.score + this.scoreAddition});
+        this.droppedFiguresWithParameters.forEach((figure) => {          
+            
+            const newFigure = this.createFigure((figure.x - this.xStart) / this.horizontalStepSize,
+                                                (figure.y - this.yStart) / this.verticalStepSize);
+            newBlocks.push(newFigure);             
+        });
+
         this.setState({droppedFigures: newBlocks});
+        //console.log(newBlocks);  
     }
 
-
-    //TODO: add shape type
     createFigure(leftBorder, bottomBorder) {
-        
+
         if(bottomBorder > 19){
             bottomBorder = 19;
         }
 
-        let xFigure = this.xStart + this.verticalStepSize * (leftBorder);
-        let yFigure = this.yStart + this.horizontalStepSize * (bottomBorder);
+        let xFigure = this.verticalStepSize * (leftBorder) + this.xStart;
+        let yFigure = this.horizontalStepSize * (bottomBorder) + this.yStart;
+        let meDie = (1000-7);
 
         const figure = <Block 
                                 x={xFigure}
                                 y={yFigure}
                                 color='red'
                                 width={this.verticalStepSize}
-                                height={this.horizontalStepSize}                       
+                                height={this.horizontalStepSize}
+                                key={String(this.keyCount)}                       
                         />;
-              
-        this.setState({currentFigure: figure});
+        this.keyCount++;
         this.currentFigureWithParameters = {
             x: xFigure,
             y: yFigure
         }
+        return figure;
+    }
+
+    
+    //TODO: add shape type
+    dropFigure(figure) {
+        
+        
+     
+        this.setState({currentFigure: figure});
+        
         //console.log(this.currentFigureWithParameters.y);
         return figure;
     }
@@ -284,10 +318,15 @@ export default class MainField extends React.Component {
        // console.log("tick count", this.tickCount); 
         
             if(this.state.isFieldVisible) {
-                //console.log(this.isLineFilled());
-                    this.isLineFilled();
+
+                    if(this.isLineFilled()) {
+                        this.deleteLines();
+                    }
+
+                
                     let figure = this.createFigure(this.state.horizontalPos, this.state.rowsPassed);
                     //console.log("tick", this.currentFigureWithParameters.y);
+                    this.setState({currentFigure: figure});
                     let rows = this.state.rowsPassed;
 
 
@@ -301,15 +340,11 @@ export default class MainField extends React.Component {
                         
                     }
                     else {
-                        this.setState({rowsPassed: ++rows, speed: placedFigureCount});
+                        this.setState({rowsPassed: ++rows});
                     }
                 
                     
-                // if(this.isLineFilled()) {
-                //     this.deleteLines();
-                // }
-            
-                    //console.log(this.droppedFiguresWithParameters);
+                    
                 }
   
     }
@@ -324,8 +359,10 @@ export default class MainField extends React.Component {
                 (<Stage id="mainStage" width={window.innerWidth} height={window.innerHeight} style={{backgroundColor: this.state.color, justifyContent: 'center'}}>
                         <Layer id="fieldLayer" style={{backgroundColor: 'blue'}}>
                             {this.addEmptyGrid()}
+                            {this.addScoreBoard()}
                             {this.state.currentFigure}
-                            {this.state.droppedFigures}						
+                            {this.state.droppedFigures}
+                           						
                             
                         </Layer>
                 </Stage>) 
