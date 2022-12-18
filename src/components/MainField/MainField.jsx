@@ -40,6 +40,8 @@ export default class MainField extends React.Component {
     filledLines = [];
 
     scoreAddition = 100;
+    isGameLost = false;
+
 
     verticalStepsCount = 10;
     horizontalStepsCount = 20;
@@ -52,6 +54,7 @@ export default class MainField extends React.Component {
     tickCount = 0;
     keyCount = 0;
 
+    interval = 500;
 
     buttonStyle = {
         backgroundColor: 'red',
@@ -68,7 +71,7 @@ export default class MainField extends React.Component {
         window.addEventListener('keydown', this.handleKeyDown);
         this.gridID = setInterval(
             () => this.tick(1),
-            100
+            this.interval
         );
 
     }
@@ -83,6 +86,7 @@ export default class MainField extends React.Component {
         this.setState({color: 'lightgray',
                        isFieldVisible: true});
     }
+
 
 
 
@@ -109,8 +113,19 @@ export default class MainField extends React.Component {
                 this.setState({rowsPassed: (this.state.rowsPassed + 1)})
                 const figure = this.createFigure(this.state.horizontalPos, this.state.rowsPassed, this.state.currentFigureType);
                 this.setState({currentFigure: figure});
+
+                //this.interval = 10;
+            }
+            //this.interval = 300;
+        }
+        else if(event.keyCode === 38) {
+            //TODO
+            if(!this.isOccupiedBottom(this.currentFigureWithParameters) && !this.isOccupiedRight(this.currentFigureWithParameters) && !this.isOccupiedLeft(this.currentFigureWithParameters))
+            {
+                this.rotateFigure();
             }
         }
+        
     }
 
     addScoreBoard() {
@@ -163,7 +178,7 @@ export default class MainField extends React.Component {
             }
             this.droppedBlocksWithParameters.forEach((item) => {
                 if(block.x === item.x) {
-                    console.log("проверка");
+                    //console.log("проверка");
                     if(block.y + this.verticalStepSize === item.y) {
                         isOccupied = true;
                     }
@@ -182,7 +197,7 @@ export default class MainField extends React.Component {
             }
             this.droppedBlocksWithParameters.forEach((item) => {
                 if(block.y === item.y) {
-                    if(block.x - this.horizontalStepSize === item.y) {
+                    if(block.x - this.horizontalStepSize === item.x) {
                         isOccupied = true;
                     }
                 }
@@ -213,7 +228,7 @@ export default class MainField extends React.Component {
         let blockInARowCount = 0;
         let isFilled = false;
 
-        for(let i = 0; i < this.horizontalStepsCount; i++) {
+        for(let i = this.horizontalStepsCount - 1; i >= 0; i--) {
             for (let block of this.droppedBlocksWithParameters) {
                     if(block.y === this.horizontalStepSize * i + this.yStart) {
                         blockInARowCount++;
@@ -263,8 +278,10 @@ export default class MainField extends React.Component {
 
     
     deleteLines() {
-        const leftBlocks = [];
+        
+        //console.log(this.filledLines);
         this.filledLines.forEach((lineIndex) => {
+            const leftBlocks = [];
             this.droppedBlocksWithParameters.forEach((block) => {
                 if(block.y !== this.verticalStepSize * lineIndex + this.yStart) {
                     if(block.y < this.verticalStepSize * lineIndex + this.yStart) {
@@ -273,25 +290,88 @@ export default class MainField extends React.Component {
                     leftBlocks.push(block);
                 }
             });
+            this.setState({score: this.state.score + this.scoreAddition});
+            this.droppedBlocksWithParameters = leftBlocks;
         });
-        this.droppedBlocksWithParameters = leftBlocks;
-        console.log(this.droppedBlocksWithParameters);
+        this.filledLines = [];
+        
+        //console.log(this.droppedBlocksWithParameters);
         this.refreshBlocks();
     }
 
     
     refreshBlocks() {
-        const newBlocks = [];
-        this.setState({droppedFigures: [], score: this.state.score + this.scoreAddition});
+        let newBlocks = [];
+        this.setState({droppedBlocks: []});
         this.droppedBlocksWithParameters.forEach((block) => {          
             
-            const newBlock = this.createBlock(block.x, block.y, block.color);
+            let newBlock = this.createBlock(block.x, block.y, block.color);
             newBlocks.push(newBlock);             
         });
-
-        this.setState({droppedFigures: newBlocks}); 
+        
+        this.setState({droppedBlocks: newBlocks}); 
     }
 
+    rotateFigure() {
+        switch(this.state.currentFigureType) {
+            case 'I':
+                this.setState({currentFigureType: 'I1'});
+                break;
+            case 'I1':
+                this.setState({currentFigureType: 'I'});
+                break;
+            case 'J':
+                this.setState({currentFigureType: 'J1'});
+                break;
+            case 'J1':
+                this.setState({currentFigureType: 'J2'});
+                break;
+            case 'J2':
+                this.setState({currentFigureType: 'J3'});
+                break;
+            case 'J3':
+                this.setState({currentFigureType: 'J'});
+                break; 
+            case 'L':
+                this.setState({currentFigureType: 'L1'});
+                break;
+            case 'L1':
+                this.setState({currentFigureType: 'L2'});
+                break;
+            case 'L2':
+                this.setState({currentFigureType: 'L3'});
+                break; 
+            case 'L3':
+                this.setState({currentFigureType: 'L'});
+                break;
+            case 'T':
+                this.setState({currentFigureType: 'T1'});
+                break;
+            case 'T1':
+                this.setState({currentFigureType: 'T2'});
+                break;
+            case 'T2':
+                this.setState({currentFigureType: 'T3'});
+                break;
+            case 'T3':
+                this.setState({currentFigureType: 'T'});
+                break; 
+            case 'Z':
+                this.setState({currentFigureType: 'Z1'});
+                break;
+            case 'Z1':
+                this.setState({currentFigureType: 'Z'});
+                break;
+            case 'S':
+                this.setState({currentFigureType: 'S1'});
+                break;
+            case 'S1':
+                this.setState({currentFigureType: 'S'});
+                break;
+            default:
+                break;         
+        }
+    } 
 
     createBlock(x, y, color) {
         return <Block 
@@ -300,7 +380,7 @@ export default class MainField extends React.Component {
                         color={color}
                         width={this.verticalStepSize}
                         height={this.horizontalStepSize}
-                        key={String(this.keyCount)}
+                        key={String(++this.keyCount)}
                 />; 
     } 
 
@@ -314,10 +394,6 @@ export default class MainField extends React.Component {
         else if(column > 9) {
             column = 9;
         }
-
-        // if(rightBorder > 9) {
-        //     rightBorder = 9;
-        // }
 
         if(row > 19){
             row = 19;
@@ -366,7 +442,7 @@ export default class MainField extends React.Component {
             this.keyCount++;
             this.currentFigureWithParameters = [
                 {x: xFigure, y: yFigure, color: 'lightgreen'},
-                {x: xFigure + this.verticalStepSize , y: yFigure, color: 'lightgreen'},
+                {x: xFigure + this.verticalStepSize, y: yFigure, color: 'lightgreen'},
                 {x: xFigure, y: yFigure + this.horizontalStepSize, color: 'lightgreen'},
                 {x: xFigure + this.verticalStepSize, y: yFigure + this.horizontalStepSize, color: 'lightgreen'}]; 
         }
@@ -413,6 +489,49 @@ export default class MainField extends React.Component {
                 {x: xFigure, y: yFigure + 2 * this.horizontalStepSize, color: 'blue'},
                 {x: xFigure, y: yFigure + 3 * this.horizontalStepSize, color: 'blue'}];
         }
+        else if(shapeType === 'I1') {
+            figureArr.push(<Block 
+                                   x={xFigure}
+                                   y={yFigure}
+                                   color='blue'
+                                   width={this.verticalStepSize}
+                                   height={this.horizontalStepSize}
+                                   key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + this.verticalStepSize}
+                                    y={yFigure}
+                                    color='blue'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure - this.verticalStepSize}
+                                    y={yFigure}
+                                    color='blue'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + 2 * this.verticalStepSize}
+                                    y={yFigure}
+                                    color='blue'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            this.currentFigureWithParameters = [
+                {x: xFigure, y: yFigure, color: 'blue'},
+                {x: xFigure + this.verticalStepSize, y: yFigure, color: 'blue'},
+                {x: xFigure - this.verticalStepSize, y: yFigure, color: 'blue'},
+                {x: xFigure + 2 * this.verticalStepSize, y: yFigure, color: 'blue'}];
+        }
         else if(shapeType === 'J') {
             figureArr.push(<Block 
                                    x={xFigure}
@@ -455,6 +574,135 @@ export default class MainField extends React.Component {
                 {x: xFigure, y: yFigure + this.horizontalStepSize, color: 'red'},
                 {x: xFigure, y: yFigure + 2 * this.horizontalStepSize, color: 'red'},
                 {x: xFigure - this.verticalStepSize, y: yFigure + 2 * this.horizontalStepSize, color: 'red'}];
+        }
+        else if(shapeType === 'J1') {
+            figureArr.push(<Block 
+                                   x={xFigure}
+                                   y={yFigure}
+                                   color='red'
+                                   width={this.verticalStepSize}
+                                   height={this.horizontalStepSize}
+                                   key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='red'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + this.verticalStepSize}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='red'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + 2 * this.verticalStepSize}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='red'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            this.currentFigureWithParameters = [
+                {x: xFigure, y: yFigure, color: 'red'},
+                {x: xFigure, y: yFigure + this.horizontalStepSize, color: 'red'},
+                {x: xFigure + this.verticalStepSize, y: yFigure + this.horizontalStepSize, color: 'red'},
+                {x: xFigure + 2 * this.verticalStepSize, y: yFigure + this.horizontalStepSize, color: 'red'}];
+        }
+        else if(shapeType === 'J2') {
+            figureArr.push(<Block 
+                                   x={xFigure}
+                                   y={yFigure}
+                                   color='red'
+                                   width={this.verticalStepSize}
+                                   height={this.horizontalStepSize}
+                                   key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + this.verticalStepSize}
+                                    y={yFigure}
+                                    color='red'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='red'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure}
+                                    y={yFigure + 2 * this.horizontalStepSize}
+                                    color='red'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            this.currentFigureWithParameters = [
+                {x: xFigure, y: yFigure, color: 'red'},
+                {x: xFigure + this.verticalStepSize, y: yFigure, color: 'red'},
+                {x: xFigure, y: yFigure + this.horizontalStepSize, color: 'red'},
+                {x: xFigure, y: yFigure + 2 * this.horizontalStepSize, color: 'red'}];
+        }
+        else if(shapeType === 'J3') {
+            figureArr.push(<Block 
+                                   x={xFigure}
+                                   y={yFigure}
+                                   color='red'
+                                   width={this.verticalStepSize}
+                                   height={this.horizontalStepSize}
+                                   key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + this.verticalStepSize}
+                                    y={yFigure}
+                                    color='red'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure - this.verticalStepSize}
+                                    y={yFigure}
+                                    color='red'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + this.verticalStepSize}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='red'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            this.currentFigureWithParameters = [
+                {x: xFigure, y: yFigure, color: 'red'},
+                {x: xFigure + this.verticalStepSize, y: yFigure, color: 'red'},
+                {x: xFigure - this.verticalStepSize, y: yFigure, color: 'red'},
+                {x: xFigure + this.verticalStepSize, y: yFigure + this.horizontalStepSize, color: 'red'}];
         }
         else if(shapeType === 'L') {
             figureArr.push(<Block 
@@ -499,6 +747,135 @@ export default class MainField extends React.Component {
                 {x: xFigure, y: yFigure + 2 * this.horizontalStepSize, color: 'orange'},
                 {x: xFigure + this.verticalStepSize, y: yFigure + 2 * this.horizontalStepSize, color: 'orange'}];
         }
+        else if(shapeType === 'L1') {
+            figureArr.push(<Block 
+                                   x={xFigure}
+                                   y={yFigure}
+                                   color='orange'
+                                   width={this.verticalStepSize}
+                                   height={this.horizontalStepSize}
+                                   key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + this.verticalStepSize}
+                                    y={yFigure}
+                                    color='orange'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure - this.verticalStepSize}
+                                    y={yFigure}
+                                    color='orange'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure - this.verticalStepSize}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='orange'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            this.currentFigureWithParameters = [
+                {x: xFigure, y: yFigure, color: 'orange'},
+                {x: xFigure + this.verticalStepSize, y: yFigure, color: 'orange'},
+                {x: xFigure - this.verticalStepSize, y: yFigure, color: 'orange'},
+                {x: xFigure - 2 * this.verticalStepSize, y: yFigure + this.horizontalStepSize, color: 'orange'}];
+        }
+        else if(shapeType === 'L2') {
+            figureArr.push(<Block 
+                                   x={xFigure}
+                                   y={yFigure}
+                                   color='orange'
+                                   width={this.verticalStepSize}
+                                   height={this.horizontalStepSize}
+                                   key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure - this.verticalStepSize}
+                                    y={yFigure}
+                                    color='orange'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='orange'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure}
+                                    y={yFigure + 2 * this.horizontalStepSize}
+                                    color='orange'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            this.currentFigureWithParameters = [
+                {x: xFigure, y: yFigure, color: 'orange'},
+                {x: xFigure - this.verticalStepSize, y: yFigure, color: 'orange'},
+                {x: xFigure, y: yFigure + this.horizontalStepSize, color: 'orange'},
+                {x: xFigure, y: yFigure + 2 * this.horizontalStepSize, color: 'orange'}];
+        }
+        else if(shapeType === 'L3') {
+            figureArr.push(<Block 
+                                   x={xFigure}
+                                   y={yFigure}
+                                   color='orange'
+                                   width={this.verticalStepSize}
+                                   height={this.horizontalStepSize}
+                                   key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='orange'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure - this.horizontalStepSize}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='orange'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure - 2 * this.verticalStepSize}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='orange'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            this.currentFigureWithParameters = [
+                {x: xFigure, y: yFigure, color: 'orange'},
+                {x: xFigure, y: yFigure + this.horizontalStepSize, color: 'orange'},
+                {x: xFigure - this.horizontalStepSize, y: yFigure + this.horizontalStepSize, color: 'orange'},
+                {x: xFigure - 2 * this.verticalStepSize, y: yFigure + this.horizontalStepSize, color: 'orange'}];
+        }
         else if(shapeType === 'T') {
             figureArr.push(<Block 
                                    x={xFigure}
@@ -537,10 +914,139 @@ export default class MainField extends React.Component {
                             />);
             this.keyCount++;
             this.currentFigureWithParameters = [
+                {x: xFigure, y: yFigure, color: 'purple', type: 'T'},
+                {x: xFigure - this.verticalStepSize, y: yFigure, color: 'purple', type: 'T'},
+                {x: xFigure, y: yFigure + this.horizontalStepSize, color: 'purple', type: 'T'},
+                {x: xFigure + this.verticalStepSize + this.verticalStepSize, y: yFigure, color: 'purple', type: 'T'}];
+        }
+        else if(shapeType === 'T1') {
+            figureArr.push(<Block 
+                                   x={xFigure}
+                                   y={yFigure}
+                                   color='purple'
+                                   width={this.verticalStepSize}
+                                   height={this.horizontalStepSize}
+                                   key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure - this.verticalStepSize}
+                                    y={yFigure}
+                                    color='purple'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='purple'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure}
+                                    y={yFigure - this.horizontalStepSize}
+                                    color='purple'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            this.currentFigureWithParameters = [
                 {x: xFigure, y: yFigure, color: 'purple'},
                 {x: xFigure - this.verticalStepSize, y: yFigure, color: 'purple'},
                 {x: xFigure, y: yFigure + this.horizontalStepSize, color: 'purple'},
-                {x: xFigure + this.verticalStepSize + this.verticalStepSize, y: yFigure, color: 'purple'}];
+                {x: xFigure, y: yFigure - this.horizontalStepSize, color: 'purple'}];
+        }
+        else if(shapeType === 'T2') {
+            figureArr.push(<Block 
+                                   x={xFigure}
+                                   y={yFigure}
+                                   color='purple'
+                                   width={this.verticalStepSize}
+                                   height={this.horizontalStepSize}
+                                   key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure - this.verticalStepSize}
+                                    y={yFigure}
+                                    color='purple'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure}
+                                    y={yFigure - this.horizontalStepSize}
+                                    color='purple'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + this.verticalStepSize}
+                                    y={yFigure}
+                                    color='purple'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            this.currentFigureWithParameters = [
+                {x: xFigure, y: yFigure, color: 'purple'},
+                {x: xFigure - this.verticalStepSize, y: yFigure, color: 'purple'},
+                {x: xFigure, y: yFigure - this.horizontalStepSize, color: 'purple'},
+                {x: xFigure + this.verticalStepSize, y: yFigure, color: 'purple'}];
+        }
+        else if(shapeType === 'T3') {
+            figureArr.push(<Block 
+                                   x={xFigure}
+                                   y={yFigure}
+                                   color='purple'
+                                   width={this.verticalStepSize}
+                                   height={this.horizontalStepSize}
+                                   key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + this.verticalStepSize}
+                                    y={yFigure}
+                                    color='purple'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure}
+                                    y={yFigure - this.horizontalStepSize}
+                                    color='purple'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='purple'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            this.currentFigureWithParameters = [
+                {x: xFigure, y: yFigure, color: 'purple'},
+                {x: xFigure + this.verticalStepSize, y: yFigure, color: 'purple'},
+                {x: xFigure, y: yFigure - this.horizontalStepSize, color: 'purple'},
+                {x: xFigure, y: yFigure + this.horizontalStepSize, color: 'purple'}];
         }
         else if(shapeType === 'Z') {
             figureArr.push(<Block 
@@ -583,7 +1089,50 @@ export default class MainField extends React.Component {
                 {x: xFigure, y: yFigure, color: 'yellow'},
                 {x: xFigure - this.verticalStepSize, y: yFigure, color: 'yellow'},
                 {x: xFigure, y: yFigure + this.horizontalStepSize, color: 'yellow'},
-                {x: xFigure + this.verticalStepSize + this.verticalStepSize, y: yFigure + this.horizontalStepSize, color: 'yellow'}];
+                {x: xFigure + this.verticalStepSize, y: yFigure + this.horizontalStepSize, color: 'yellow'}];
+        }
+        else if(shapeType === 'Z1') {
+            figureArr.push(<Block 
+                                   x={xFigure}
+                                   y={yFigure}
+                                   color='yellow'
+                                   width={this.verticalStepSize}
+                                   height={this.horizontalStepSize}
+                                   key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + this.verticalStepSize}
+                                    y={yFigure}
+                                    color='yellow'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='yellow'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + this.verticalStepSize}
+                                    y={yFigure - this.horizontalStepSize}
+                                    color='yellow'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            this.currentFigureWithParameters = [
+                {x: xFigure, y: yFigure, color: 'yellow'},
+                {x: xFigure + this.verticalStepSize, y: yFigure, color: 'yellow'},
+                {x: xFigure, y: yFigure + this.horizontalStepSize, color: 'yellow'},
+                {x: xFigure + this.verticalStepSize, y: yFigure - this.horizontalStepSize, color: 'yellow'}];
         }
         else if(shapeType === 'S'){
             figureArr.push(<Block 
@@ -626,7 +1175,50 @@ export default class MainField extends React.Component {
                 {x: xFigure, y: yFigure, color: 'brown'},
                 {x: xFigure + this.verticalStepSize, y: yFigure, color: 'brown'},
                 {x: xFigure, y: yFigure + this.horizontalStepSize, color: 'brown'},
-                {x: xFigure - this.verticalStepSize + this.verticalStepSize, y: yFigure + this.horizontalStepSize, color: 'brown'}];
+                {x: xFigure - this.verticalStepSize, y: yFigure + this.horizontalStepSize, color: 'brown'}];
+        }
+        else if(shapeType === 'S1'){
+            figureArr.push(<Block 
+                                   x={xFigure}
+                                   y={yFigure}
+                                   color='brown'
+                                   width={this.verticalStepSize}
+                                   height={this.horizontalStepSize}
+                                   key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + this.verticalStepSize}
+                                    y={yFigure}
+                                    color='brown'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure}
+                                    y={yFigure - this.horizontalStepSize}
+                                    color='brown'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            figureArr.push(<Block 
+                                    x={xFigure + this.verticalStepSize}
+                                    y={yFigure + this.horizontalStepSize}
+                                    color='brown'
+                                    width={this.verticalStepSize}
+                                    height={this.horizontalStepSize}
+                                    key={String(this.keyCount)}
+                            />);
+            this.keyCount++;
+            this.currentFigureWithParameters = [
+                {x: xFigure, y: yFigure, color: 'brown'},
+                {x: xFigure + this.verticalStepSize, y: yFigure, color: 'brown'},
+                {x: xFigure, y: yFigure - this.horizontalStepSize, color: 'brown'},
+                {x: xFigure + this.verticalStepSize, y: yFigure + this.horizontalStepSize, color: 'brown'}];
         }
            
                                                                                                                               
@@ -645,7 +1237,12 @@ export default class MainField extends React.Component {
 
     tick(placedFigureCount) {    
             if(this.state.isFieldVisible) {
-
+                //console.log(this.isGameLost);
+                    if(this.isGameLost) {
+                        this.setState({isFieldVisible: false});
+                        alert(`Игра окончена! Счёт: ${this.state.score}`);
+                        this.isGameLost = false;
+                    }
                     
                     if(this.isLineFilled()) {
                         this.deleteLines();
@@ -660,16 +1257,23 @@ export default class MainField extends React.Component {
                     //console.log(this.state.currentFigure);
                     if(this.isOccupiedBottom(this.currentFigureWithParameters)) {
                         
+                        if(this.state.rowsPassed === 0) {
+                            this.isGameLost = true;
+                        }
+
                         this.setState({rowsPassed: 0, horizontalPos: 4, droppedBlocks: [...this.state.droppedBlocks, ...figure]});
                         this.droppedBlocksWithParameters = [...this.droppedBlocksWithParameters,
                                                             ...this.currentFigureWithParameters];
-                        console.log(this.droppedBlocksWithParameters);
+                        
+                                                           
+                        //console.log(this.currentFigureWithParameters);                                  
+                        //console.log(this.droppedBlocksWithParameters);
                         this.setState({currentFigureType: this.randomizeType()});
                     }
                     else {
                         this.setState({rowsPassed: ++rows});
                     }
-                
+                   
                     
                     
                 }
